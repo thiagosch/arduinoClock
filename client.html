@@ -1,0 +1,141 @@
+<html>
+  <body>
+    <style>
+      .modal {
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(135, 135, 135, 0.35);
+        box-shadow: 0 0 18px rgba(0, 0, 0, 0.2);
+        justify-content: center;
+        position: absolute;
+        inset: 0;
+      }
+      .modal::before {
+        background-color: rgba(0, 0, 0, 0.69);
+        content: '';
+        filter: blur(190px);
+        position: absolute;
+        inset: 3%;
+        z-index: 2;
+      }
+    </style>
+    <div>
+      <div>Brillo dia:</div>
+      <div id='brillodiadisplay'>--</div>
+      <input id='brillodiarange' type='range' min='0' max='7' value='0' />
+    </div>
+    <div>
+      <div>Brillo noche:</div>
+      <div id='brillonochedisplay'>--</div>
+      <input id='brillonocherange' type='range' min='0' max='7' value='0' />
+    </div>
+    <div>
+      <div>primera hora del dia:</div>
+      <div id='primerahoradisplay'>--</div>
+      <input id='primerahorarange' type='range' min='4' max='10' value='0' />
+    </div>
+    <div>
+      <div>ultima hora del dia:</div>
+      <div id='ultimahoradisplay'>--</div>
+      <input id='ultimahorarange' type='range' min='17' max='22' value='0' />
+    </div>
+    <hr />
+    <hr />
+    <input id='brightness_level' type='range' min='0' max='7' value='4' />
+    <button id='submit'>submit</button>
+    <div id='demo'></div>
+    <div class='modal' id='main'></div>
+    <script>
+
+      
+      let objectData;
+      let sliderValue = 0;
+      var slider = document.getElementById('brightness_level');
+      let sliderFirstHour = document.getElementById('primerahorarange');
+      let sliderSecondHour = document.getElementById('ultimahorarange');
+      let primerahoradisplay = document.getElementById('primerahoradisplay');
+      let ultimahoradisplay = document.getElementById('ultimahoradisplay');
+      let brillodiadisplay = document.getElementById('brillodiadisplay');
+      let sliderbrillodia = document.getElementById('brillodiarange');
+      let brillonochedisplay = document.getElementById('brillonochedisplay');
+      let sliderbrillonoche = document.getElementById('brillonocherange');
+      
+      getData();
+      sliderSecondHour.oninput = function () {
+        ultimahoradisplay.innerHTML = this.value;
+        objectData['lasthourday'] = this.value;
+      };
+      sliderFirstHour.oninput = function () {
+        primerahoradisplay.innerHTML = this.value;
+        objectData['firsthourday'] = this.value;
+      };
+      sliderbrillodia.oninput = function () {
+        brillodiadisplay.innerHTML = this.value;
+        objectData['daybrightness'] = this.value;
+      };
+      sliderbrillonoche.oninput = function () {
+        brillonochedisplay.innerHTML = this.value;
+        objectData['nightbrightness'] = this.value;
+      };
+      var output = document.getElementById('demo');
+      slider.oninput = function () {
+        output.innerHTML = this.value;
+        sliderValue = this.value;
+        console.log(sliderValue);
+      };
+      document.getElementById('submit').addEventListener('click', sendUpdates);
+      function getData() {
+        fetch('http://arduinoip/getdata')
+          .then((response) => response.json())
+          .then((data) => {
+            fetcheddata = data;
+            console.log(fetcheddata);
+            objectData = fetcheddata;
+            updatehtml();
+          });
+      }
+
+      function sendUpdates() {
+        fetch('http://arduinoip/setvalues', {
+          method: 'POST',
+          body: JSON.stringify(objectData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            fetcheddata = data;
+            console.log(fetcheddata);
+          });
+          //this saves data to a server to be retrieved on arduino boot.
+          fetch('http://serverip/savedataclock', {
+          method: 'POST',
+          body: JSON.stringify(objectData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            fetcheddata = data;
+            console.log(fetcheddata);
+          });
+      }
+
+      function updatehtml() {
+        document.getElementById('brillodiadisplay').innerHTML = objectData['daybrightness'];
+
+        document.getElementById('brillonochedisplay').innerHTML = objectData['nightbrightness'];
+
+        primerahoradisplay.innerHTML = objectData['firsthourday'];
+        sliderFirstHour.value = objectData['firsthourday'];
+
+        ultimahoradisplay.innerHTML = objectData['lasthourday'];
+        sliderSecondHour.value = objectData['lasthourday'];
+
+        brillodiadisplay.innerHTML = objectData['daybrightness'];
+        sliderbrillodia.value = objectData['daybrightness'];
+
+        brillonochedisplay.innerHTML = objectData['nightbrightness'];
+        sliderbrillonoche.value = objectData['nightbrightness'];
+        document.getElementById('main').className = '';
+      }
+    </script>
+  </body>
+</html>
